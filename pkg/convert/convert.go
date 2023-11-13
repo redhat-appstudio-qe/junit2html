@@ -3,6 +3,7 @@ package convert
 import (
 	_ "embed"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -56,6 +57,8 @@ func Convert(suites *reporters.JUnitTestSuites) (string, error) {
 }
 
 func printTest(testSuite reporters.JUnitTestSuite, testCase reporters.JUnitTestCase) {
+	// regexp for replacing HTML tags in the log
+	re := regexp.MustCompile(`<\/?[^>]+(>|$)`)
 	id := fmt.Sprintf("%s.%s.%s", testSuite.Name, testCase.Classname, testCase.Name)
 	class, text := "passed", "Pass"
 	failure := testCase.Failure
@@ -80,18 +83,21 @@ func printTest(testSuite reporters.JUnitTestSuite, testCase reporters.JUnitTestC
 	d := time.Duration(testCase.Time * float64(time.Second)).Round(time.Second)
 	output += fmt.Sprintf("<p class='duration' title='Test duration'>Test duration: %v</p>\n", d)
 	if tcError != nil {
+		tcError.Message = re.ReplaceAllString(tcError.Message, "")
+		tcError.Description = re.ReplaceAllString(tcError.Description, "")
 		output += fmt.Sprintf("<div class='content'><b>Error message:</b> \n\n%s</div>\n", tcError.Message)
 		output += fmt.Sprintf("<div class='content'><b>Error description:</b> \n\n%s</div>\n", tcError.Description)
 	} else if failure != nil {
-		failure.Message = strings.ReplaceAll(failure.Message, `<bool>`, `"bool"`)
-		failure.Description = strings.ReplaceAll(failure.Description, `<bool>`, `"bool"`)
+		failure.Message = re.ReplaceAllString(failure.Message, "")
+		failure.Description = re.ReplaceAllString(failure.Description, "")
 		output += fmt.Sprintf("<div class='content'><b>Failure message:</b> \n\n%s</div>\n", failure.Message)
 		output += fmt.Sprintf("<div class='content'><b>Failure description:</b> \n\n%s</div>\n", failure.Description)
 	} else if skipped != nil {
+		skipped.Message = re.ReplaceAllString(skipped.Message, "")
 		output += fmt.Sprintf("<div class='content'>%s</div>\n", skipped.Message)
 	}
 	if testCase.SystemErr != "" {
-		testCase.SystemErr = strings.ReplaceAll(testCase.SystemErr, `<bool>`, `"bool"`)
+		testCase.SystemErr = re.ReplaceAllString(testCase.SystemErr, "")
 		output += fmt.Sprintf("<div class='content'><b>Log:</b> \n\n%s</div>\n", testCase.SystemErr)
 	}
 
