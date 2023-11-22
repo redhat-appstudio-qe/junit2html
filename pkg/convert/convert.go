@@ -9,6 +9,7 @@ import (
 	"time"
 
 	reporters "github.com/onsi/ginkgo/v2/reporters"
+	"github.com/onsi/ginkgo/v2/types"
 )
 
 //go:embed style.css
@@ -96,7 +97,7 @@ func printTest(testSuite reporters.JUnitTestSuite, testCase reporters.JUnitTestC
 		skipped.Message = re.ReplaceAllString(skipped.Message, "")
 		output += fmt.Sprintf("<div class='content'>%s</div>\n", skipped.Message)
 	}
-	if testCase.SystemErr != "" {
+	if testCase.SystemErr != "" && testCase.Status != types.SpecStatePassed.String() {
 		testCase.SystemErr = re.ReplaceAllString(testCase.SystemErr, "")
 		output += fmt.Sprintf("<div class='content'><b>Log:</b> \n\n%s</div>\n", testCase.SystemErr)
 	}
